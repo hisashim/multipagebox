@@ -1,0 +1,613 @@
+%% multipagebox.sty
+%% Multi-page Spanning Box with Round Corners
+%% 2008 Hisashi Morita
+%%
+%% How it works:
+%%
+%%   +--------+         +--------+          ----------- 
+%%   |        |  loop   | first  |         /first slice\
+%%   |        |         +--------+         +-----------+
+%%   |        | vsplit  +--------+         +-----------+
+%%   |  rest  | ------> |  gap   |   -->   | mid slice |
+%%   |        |         +--------+         +-----------+
+%%   |        |         +--------+              ...     
+%%   |        |         |  rest  |         +-----------+
+%%   |        | < - - - |        |         \last slice /
+%%   +--------+         +--------+          ----------- 
+%%
+%%   slice = picture + content (i.e. |foo| = |   | + foo)
+%%
+%% References:
+%%   Hideki Isozaki, "LaTeX Jiyu Jizai" (Sciencesha, 1992)
+%%   Tetsumi Yoshinaga, "LaTeX2e Macro & Class Programming Jissen Kaisetsu" (Gijutsu Hyoronsha, 2003)
+
+%%
+%% package declarations
+%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{multipagebox}
+\DeclareOption*{%  %% delegate options (mostly dviware names) to pict2e and color
+  \PassOptionsToPackage{\CurrentOption}{pict2e}
+  \PassOptionsToPackage{\CurrentOption}{color}
+  \PassOptionsToPackage{usenames}{color}
+}
+\ProcessOptions
+\RequirePackage{pict2e}%  %% required for smooth rounded corner
+\RequirePackage{color}
+\definecolor{gray10}{cmyk}{0.0, 0.0, 0.0, 0.1}
+\definecolor{gray20}{cmyk}{0.0, 0.0, 0.0, 0.2}
+\definecolor{gray30}{cmyk}{0.0, 0.0, 0.0, 0.3}
+\definecolor{gray40}{cmyk}{0.0, 0.0, 0.0, 0.4}
+\definecolor{gray50}{cmyk}{0.0, 0.0, 0.0, 0.5}
+\definecolor{gray60}{cmyk}{0.0, 0.0, 0.0, 0.6}
+\definecolor{gray70}{cmyk}{0.0, 0.0, 0.0, 0.7}
+\definecolor{gray80}{cmyk}{0.0, 0.0, 0.0, 0.8}
+\definecolor{gray90}{cmyk}{0.0, 0.0, 0.0, 0.9}
+
+%%
+%% public parameters
+%%
+
+\newlength\mpboxborderwidth   \mpboxborderwidth   =  0.4pt
+\newlength\mpboxpaddingtop    \mpboxpaddingtop    =  1em
+\newlength\mpboxpaddingbottom \mpboxpaddingbottom =  1em
+\newlength\mpboxpaddingleft   \mpboxpaddingleft   =  1em
+\newlength\mpboxpaddingright  \mpboxpaddingright  =  1em
+\newlength\mpboxmargintop     \mpboxmargintop     =  \baselineskip
+\newlength\mpboxmarginbottom  \mpboxmarginbottom  =  \baselineskip
+% \newlength\mpboxmarginleft    \mpboxmarginleft    =  0em
+% \newlength\mpboxmarginright   \mpboxmarginright   =  0em
+\newlength\mpboxparindent     \mpboxparindent     =  \parindent
+\newlength\mpboxcornerradius  \mpboxcornerradius  =  0.5em  % 0 < r <= \mpboxpadding*
+\newcommand{\mpboxbgcolor}{gray20}
+\newcommand{\mpboxbordercolor}{gray80}
+
+%%
+%% private objects
+%%
+
+\newbox\mpbox@first      %% first fragment of split content
+\newbox\mpbox@rest       %% the rest
+\newlength\mpbox@gap     %% gap between first and rest
+\newif\ifmpbox@havemore  %% have more content or not
+\newif\ifmpbox@inside    %% inside multipagebox or not
+\newbox\mpbox@tempbox
+\newbox\mpbox@contentbox
+\newlength\mpbox@tempdim
+\newlength\mpbox@hborderlength
+\newlength\mpbox@vborderlength
+
+%%
+%% common utilities
+%%
+
+%% split content destructively: 1:first, 2:rest, 3:gap
+\def\mpbox@split#1#2#3{%
+  #3=\ht#2                               %% gap := height_all
+  \advance#3\dp#2                        %% gap := gap + depth_all
+  \setbox#1\vsplit#2 to\z@               %% first, rest := split(content)
+  \setbox#1\vbox{\unvbox#1}%             %% repack first
+  \setbox\mpbox@tempbox\vbox{%           %% concat first and rest
+    \copy#1\copy#2}%
+  \advance\mpbox@gap-\ht\mpbox@tempbox   %% gap := gap - height_(first+rest)
+  \advance\mpbox@gap-\dp\mpbox@tempbox}  %% gap := gap - depth_(first+rest)
+
+%% change height destructively: 1:target, 2:length
+\def\mpbox@addheightx#1#2{%
+  \mpbox@tempdim\ht#1
+  \advance\mpbox@tempdim#2
+  \ht#1\mpbox@tempdim}
+
+%% change depth destructively: 1:target, 2:length
+\def\mpbox@adddepthx#1#2{%
+  \mpbox@tempdim\dp#1
+  \advance\mpbox@tempdim#2
+  \dp#1\mpbox@tempdim}
+
+%%
+%% draw slices: square corner version (drawn with rules)
+%%
+
+\def\mpbox@slice#1{%
+  \hbox to \hsize{%
+    \vrule\@width\mpboxborderwidth
+    \hskip\mpboxpaddingleft
+    \box#1\hfil
+    \hskip\mpboxpaddingright
+    \vrule\@width\mpboxborderwidth}}
+
+\def\mpbox@singleslice#1{%
+  \vbox{%
+    \hrule\@height\mpboxborderwidth
+    \setbox\mpbox@contentbox\vbox{\vskip\mpboxpaddingtop\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \mpbox@adddepthx\mpbox@contentbox\mpboxpaddingbottom
+    \mpbox@slice\mpbox@contentbox
+    \hrule\@height\mpboxborderwidth}}
+
+\def\mpbox@firstslice#1{%
+  \vbox{%
+    \hrule\@height\mpboxborderwidth
+    \setbox\mpbox@contentbox\vbox{\vskip\mpboxpaddingtop\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \mpbox@slice\mpbox@contentbox}}
+
+\def\mpbox@midslice#1{%
+  \setbox\mpbox@contentbox\vbox{\copy#1}%
+  \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+  \mpbox@slice\mpbox@contentbox}
+
+\def\mpbox@lastslice#1{%
+  \vtop{%
+    \setbox\mpbox@contentbox\vbox{\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \mpbox@adddepthx\mpbox@contentbox\mpboxpaddingbottom
+    \mpbox@slice\mpbox@contentbox
+    \hrule\@height\mpboxborderwidth}}
+
+%%
+%% draw slices: round corner version (drawn with picture)
+%%
+
+\def\mpbox@singleslicewithroundcorner#1{%
+  \vbox{%
+    \setlength{\mpbox@hborderlength}{\hsize}%
+    \addtolength{\mpbox@hborderlength}{-2\mpboxcornerradius}%
+    \setbox\mpbox@contentbox\vbox{\addvspace{\mpboxpaddingtop}\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \mpbox@adddepthx\mpbox@contentbox\mpboxpaddingbottom
+    \setlength{\mpbox@vborderlength}{\ht\mpbox@contentbox}%
+    \addtolength{\mpbox@vborderlength}{\dp\mpbox@contentbox}%
+    \addtolength{\mpbox@vborderlength}{-2\mpboxcornerradius}%
+    \noindent
+    %% paint background
+    \begin{picture}(0,0)%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%                     %% move from baseline to nw corner
+        \setlength{\unitlength}{\mpboxcornerradius}%
+        \put(1,-1){\color{\mpboxbgcolor}{\circle*{2}}}%  paint nw corner
+%        \qbezier(0,-1)(0,0)(1,0)%     %% draw nw corner
+        \put(1,0){%
+          \setlength{\unitlength}{0.5\mpbox@hborderlength}%
+          \put(1,0){%                 %% paint whole square (except for w and e side)
+            \setlength{\unitlength}{\ht\mpbox@contentbox}%
+            \addtolength{\unitlength}{\dp\mpbox@contentbox}%
+            \linethickness{\mpbox@hborderlength}%
+            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+          }%
+          \put(1,0){%
+            \setlength{\unitlength}{\mpboxcornerradius}%
+            \put(0,-1){%              %% paint whole square (except for n and s row)
+              \setlength{\unitlength}{\mpbox@vborderlength}%
+              \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
+              \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
+              \linethickness{\mpbox@tempdim}%
+              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            }%
+          }%
+          \setlength{\unitlength}{\mpbox@hborderlength}%
+          \line(1,0){1}%              %% draw n border (BUG?: ne/se corner not painted without this line)
+          \put(0,0){%
+            \setlength{\unitlength}{\mpboxcornerradius}%
+            \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint ne corner
+%            \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
+            \put(1,-1){%
+              \setlength{\unitlength}{\mpbox@vborderlength}%
+%              \line(0,-1){1}%         %% draw e border
+              \put(0,-1){%
+                \setlength{\unitlength}{\mpboxcornerradius}%
+                \put(-1,0){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint se corner
+%                \qbezier(0,0)(0,-1)(-1,-1)% %% draw se corner
+                \put(-1,-1){%
+                  \setlength{\unitlength}{\mpbox@hborderlength}%
+%                  \line(-1,0){1}%     %% draw s border
+                  \put(-1,0){%
+                    \setlength{\unitlength}{\mpboxcornerradius}%
+                    \put(0,1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint nw corner
+%                    \qbezier(0,0)(-1,0)(-1,1)% %% draw sw corner
+%                    \put(-1,1){%
+%                      \setlength{\unitlength}{\mpbox@vborderlength}%
+%                      \line(0,1){1}%  %% draw w border
+%                    }%
+                  }%
+                }%
+              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    %% draw border
+    \begin{picture}(0,0)%
+      \color{\mpboxbordercolor}%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%                     %% move from baseline to nw corner
+        \setlength{\unitlength}{\mpboxcornerradius}%
+        \qbezier(0,-1)(0,0)(1,0)%     %% draw nw corner
+        \put(1,0){%
+          \setlength{\unitlength}{\mpbox@hborderlength}%
+          \line(1,0){1}%              %% draw n border
+          \put(0,0){%
+            \setlength{\unitlength}{\mpboxcornerradius}%
+            \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
+            \put(1,-1){%
+              \setlength{\unitlength}{\mpbox@vborderlength}%
+              \line(0,-1){1}%         %% draw e border
+              \put(0,-1){%
+                \setlength{\unitlength}{\mpboxcornerradius}%
+                \qbezier(0,0)(0,-1)(-1,-1)% %% draw se corner
+                \put(-1,-1){%
+                  \setlength{\unitlength}{\mpbox@hborderlength}%
+                  \line(-1,0){1}%     %% draw s border
+                  \put(-1,0){%
+                    \setlength{\unitlength}{\mpboxcornerradius}%
+                    \qbezier(0,0)(-1,0)(-1,1)% %% draw sw corner
+                    \put(-1,1){%
+                      \setlength{\unitlength}{\mpbox@vborderlength}%
+                      \line(0,1){1}%  %% draw w border
+                    }%
+                  }%
+                }%
+              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    \hbox to \hsize{%
+      \hskip\mpboxborderwidth
+      \hskip\mpboxpaddingleft
+      \box\mpbox@contentbox\hfil
+      \hskip\mpboxpaddingright
+      \hskip\mpboxborderwidth}%
+  }}
+
+\def\mpbox@firstslicewithroundcorner#1{%
+  \vbox{%
+    \setlength{\mpbox@hborderlength}{\hsize}%
+    \addtolength{\mpbox@hborderlength}{-2\mpboxcornerradius}%
+    \setbox\mpbox@contentbox\vbox{\addvspace{\mpboxpaddingtop}\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \setlength{\mpbox@vborderlength}{\ht\mpbox@contentbox}%
+    \ifdim 0pt<\dp\mpbox@contentbox
+      \addtolength{\mpbox@vborderlength}{\dp\mpbox@contentbox}%
+    \fi
+    \ifdim\mpboxcornerradius<\mpbox@vborderlength
+      \addtolength{\mpbox@vborderlength}{-\mpboxcornerradius}%
+    \else
+      \setlength{\mpbox@vborderlength}{0pt}%
+    \fi
+    \noindent
+    %% paint background
+    \begin{picture}(0,0)%
+      \setlength{\unitlength}{\dp\mpbox@contentbox}%
+      \put(0,-1){%                    %%  move from baseline to s of w border
+        \setlength{\unitlength}{\mpbox@vborderlength}%
+%        \line(0,1){1}%                %% draw w border
+        \put(0,1){%
+          \setlength{\unitlength}{\mpboxcornerradius}%
+%          \qbezier(0,0)(0,1)(1,1)%    %% draw nw corner
+          \put(1,1){%
+            \setlength{\unitlength}{0.5\mpbox@hborderlength}%
+            \put(1,0){%               %% paint whole square (except for left side and right side)
+              \setlength{\unitlength}{\ht\mpbox@contentbox}%
+              \addtolength{\unitlength}{\dp\mpbox@contentbox}%
+              \linethickness{\mpbox@hborderlength}%
+              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            }%
+            \put(1,0){%
+              \setlength{\unitlength}{\mpboxcornerradius}%
+              \put(0,-1){%            %% paint whole square (except for top row and bottom row)
+                \setlength{\unitlength}{\mpbox@vborderlength}%
+                \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
+                \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
+                \linethickness{\mpbox@tempdim}%
+                \color{\mpboxbgcolor}{\line(0,-1){1}}%
+              }%
+            }%
+            \setlength{\unitlength}{\mpboxcornerradius}%
+            \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint nw corner
+            \setlength{\unitlength}{\mpbox@hborderlength}%
+            \line(1,0){1}%            %% n border (BUG?: ne corner not painted without this line)
+            \put(0,0){%
+              \setlength{\unitlength}{\mpboxcornerradius}%
+              \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint ne corner
+%              \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
+%              \put(1,-1){%
+%                \setlength{\unitlength}{\mpbox@vborderlength}%
+%                \line(0,-1){1}%       %% draw e border
+%              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    %% draw border
+    \begin{picture}(0,0)%
+      \color{\mpboxbordercolor}%
+      \setlength{\unitlength}{\dp\mpbox@contentbox}%
+      \put(0,-1){%                    %% move from baseline to s of w border
+        \setlength{\unitlength}{\mpbox@vborderlength}%
+        \line(0,1){1}%                %% draw w border
+        \put(0,1){%
+          \setlength{\unitlength}{\mpboxcornerradius}%
+          \qbezier(0,0)(0,1)(1,1)%    %% draw nw corner
+          \put(1,1){%
+            \setlength{\unitlength}{\mpbox@hborderlength}%
+            \line(1,0){1}%            %% draw n border
+            \put(0,0){%
+              \setlength{\unitlength}{\mpboxcornerradius}%
+              \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
+              \put(1,-1){%
+                \setlength{\unitlength}{\mpbox@vborderlength}%
+                \line(0,-1){1}%       %% draw e border
+              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    \hbox to \hsize{%
+      \hskip\mpboxborderwidth
+      \hskip\mpboxpaddingleft
+      \box\mpbox@contentbox\hfil
+      \hskip\mpboxpaddingright
+      \hskip\mpboxborderwidth}%
+  }}
+
+\def\mpbox@midslicewithroundedcorner#1{%
+  \vbox{%
+    \setlength{\mpbox@hborderlength}{\hsize}%
+    \addtolength{\mpbox@hborderlength}{-2\mpboxcornerradius}%
+    \setbox\mpbox@contentbox\vbox{\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \setlength{\mpbox@vborderlength}{\ht\mpbox@contentbox}%
+    \addtolength{\mpbox@vborderlength}{\dp\mpbox@contentbox}%
+    \noindent
+    %% paint background
+    \begin{picture}(0,0)%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%                     %% move from baseline to n of w border
+        \setlength{\unitlength}{0.5\mpbox@hborderlength}%
+        \put(1,0){%
+          \setlength{\unitlength}{\mpboxcornerradius}%
+          \put(1,0){%                 %% paint square
+            \setlength{\unitlength}{\mpbox@vborderlength}%
+            \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
+            \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
+            \linethickness{\mpbox@tempdim}%
+            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+          }%
+        }%
+%        \setlength{\unitlength}{\mpbox@vborderlength}%
+%        \line(0,-1){1}%               %% draw w border
+%        \setlength{\unitlength}{\hsize}%
+%        \put(1,0){%
+%          \setlength{\unitlength}{\mpbox@vborderlength}%
+%          \line(0,-1){1}%             %% draw e border
+%        }%
+      }%
+    \end{picture}%
+    %% draw border
+    \begin{picture}(0,0)%
+      \color{\mpboxbordercolor}%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%                     %% move from baseline to n of w border
+        \setlength{\unitlength}{\mpbox@vborderlength}%
+        \line(0,-1){1}%               %% draw w border
+        \setlength{\unitlength}{\hsize}%
+        \put(1,0){%
+          \setlength{\unitlength}{\mpbox@vborderlength}%
+          \line(0,-1){1}%             %% draw e border
+        }%
+      }%
+    \end{picture}%
+    \hbox to \hsize{%
+      \hskip\mpboxborderwidth
+      \hskip\mpboxpaddingleft
+      \box\mpbox@contentbox\hfil
+      \hskip\mpboxpaddingright
+      \hskip\mpboxborderwidth}%
+  }}
+
+\def\mpbox@lastslicewithroundcorner#1{%
+  \vtop{%
+    \setlength{\mpbox@hborderlength}{\hsize}%
+    \addtolength{\mpbox@hborderlength}{-2\mpboxcornerradius}%
+    \setbox\mpbox@contentbox\vbox{\copy#1}%
+    \mpbox@adddepthx\mpbox@contentbox\mpbox@gap
+    \mpbox@adddepthx\mpbox@contentbox\mpboxpaddingbottom
+    \setlength{\mpbox@vborderlength}{\ht\mpbox@contentbox}%
+    \addtolength{\mpbox@vborderlength}{\dp\mpbox@contentbox}%
+    \addtolength{\mpbox@vborderlength}{-\mpboxcornerradius}%
+    \noindent
+    %% paint background
+    \begin{picture}(0,0)%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%
+        \setlength{\unitlength}{\mpboxcornerradius}%
+        \put(1,0){%
+          \setlength{\unitlength}{0.5\mpbox@hborderlength}%
+          \put(1,0){%                 %% paint whole square (except for left side and right side)
+            \setlength{\unitlength}{\ht\mpbox@contentbox}%
+            \addtolength{\unitlength}{\dp\mpbox@contentbox}%
+            \linethickness{\mpbox@hborderlength}%
+            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+          }%
+          \put(1,0){%
+            \setlength{\unitlength}{\mpboxcornerradius}%
+            \put(0,0){%               %% paint whole square (except for top row and bottom row)
+              \setlength{\unitlength}{\mpbox@vborderlength}%
+              \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
+              \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
+              \linethickness{\mpbox@tempdim}%
+              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            }%
+          }%
+        }%
+        \setlength{\unitlength}{\mpbox@vborderlength}%
+%        \line(0,-1){1}%              %% draw w border
+        \put(0,-1){%
+          \setlength{\unitlength}{\mpboxcornerradius}%
+          \put(1,0){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint sw corner
+%          \qbezier(0,0)(0,-1)(1,-1)%  %% draw sw corner
+          \put(1,-1){%
+            \setlength{\unitlength}{\mpbox@hborderlength}%
+            \line(1,0){1}%            %% draw s border (BUG?: se corner not painted without this line)
+            \put(0,0){%
+              \setlength{\unitlength}{\mpboxcornerradius}%
+              \put(0,1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint se corner
+%              \qbezier(0,0)(1,0)(1,1)% %% draw se corner
+              \put(1,1){%
+                \setlength{\unitlength}{\mpbox@vborderlength}%
+%                \line(0,1){1}%       %% draw e border
+              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    %% draw border
+    \begin{picture}(0,0)%
+      \color{\mpboxbordercolor}%
+      \setlength{\unitlength}{\ht\mpbox@contentbox}%
+      \put(0,1){%
+        \setlength{\unitlength}{\mpbox@vborderlength}%
+        \line(0,-1){1}%               %% draw w border
+        \put(0,-1){%
+          \setlength{\unitlength}{\mpboxcornerradius}%
+          \qbezier(0,0)(0,-1)(1,-1)%  %% draw sw corner
+          \put(1,-1){%
+            \setlength{\unitlength}{\mpbox@hborderlength}%
+            \line(1,0){1}%            %% draw s border
+            \put(0,0){%
+              \setlength{\unitlength}{\mpboxcornerradius}%
+              \qbezier(0,0)(1,0)(1,1)% %% draw se corner
+              \put(1,1){%
+                \setlength{\unitlength}{\mpbox@vborderlength}%
+                \line(0,1){1}%        %% draw e border
+              }%
+            }%
+          }%
+        }%
+      }%
+    \end{picture}%
+    \hbox to \hsize{%
+      \hskip\mpboxborderwidth
+      \hskip\mpboxpaddingleft
+      \box\mpbox@contentbox\hfil
+      \hskip\mpboxpaddingright
+      \hskip\mpboxborderwidth}%
+  }}
+
+%%
+%% beginning of environment
+%%
+
+\def\multipagebox{%
+  \ifmpbox@inside
+    \mpbox@insidefalse
+    %% vspace for margin should not be disabled even if inside multipagebox
+    \addvspace{\mpboxmargintop}%
+    \mpbox@insidetrue
+  \else
+    \addvspace{\mpboxmargintop}%
+  \fi
+  \setbox\mpbox@rest\vbox\bgroup  %% start of content (vbox \mpbox@rest)
+    \advance\linewidth -2\mpboxborderwidth
+    \advance\linewidth -\mpboxpaddingleft
+    \advance\linewidth -\mpboxpaddingright
+    \hsize=\linewidth
+    \@parboxrestore
+    \parindent\mpboxparindent
+    \mpbox@insidetrue             %% disable \addvspace at start of headings
+    \relax}
+
+%%
+%% end of environment and main loop
+%%
+
+\def\endmultipagebox{%
+  \mpbox@insidefalse              %% enable \addvspace at start of headings again
+  \egroup                         %% end of content (vbox \mpbox@rest)
+  \ifhmode\par\fi
+  {%
+    \noindent
+    \mpbox@havemoretrue
+    \linethickness{\mpboxborderwidth}%
+    \baselineskip=0pt             %% suppress space between lines
+    \lineskiplimit=0pt            %%
+    \lineskip=0pt                 %%
+    \vfuzz=\maxdimen              %% suppress warnings
+    \vbadness=10000               %%
+    \splittopskip=\topskip        %% top skip of rest
+    \splitmaxdepth=\maxdimen      %% max depth of rest
+    \mpbox@split\mpbox@first\mpbox@rest\mpbox@gap
+    %% overwrite addvspace to be suppressed if mpbox@inside is true
+    \def\addvspace##1{%
+      \ifvmode
+        \if@minipage\else
+          \ifmpbox@inside\else
+            \ifdim \lastskip =\z@
+             \vskip ##1\relax
+            \else
+              \@tempskipb##1\relax
+              \@xaddvskip
+            \fi
+          \fi
+        \fi
+      \else
+        \@noitemerr
+      \fi}%
+    %% overwrite latex error message to report more info
+    \def\@badlinearg{%
+      \@latex@error{%
+         Bad \protect\line\space or \protect\vector
+         \space argument
+         (\unitlength: \the\unitlength,
+          \@linelen: \the\@linelen,
+          \mpboxcornerradius: \the\mpboxcornerradius,
+          \mpbox@hborderlength: \the\mpbox@hborderlength,
+          \mpbox@vborderlength: \the\mpbox@vborderlength,
+          \ht\mpbox@tempbox: \the\ht\mpbox@tempbox,
+          \dp\mpbox@tempbox: \the\dp\mpbox@tempbox,
+          \mpboxpaddingbottom: \the\mpboxpaddingbottom)
+         }\@ehb}%
+    %% start of loop to construct slices
+    \ifvoid\mpbox@rest            %% there is only one slice
+      \def\mpbox@allslices{%
+%        \mpbox@singleslice\mpbox@first}%
+        \mpbox@singleslicewithroundcorner\mpbox@first}%
+    \else                         %% multiple slices
+      \def\mpbox@allslices{%
+%        \mpbox@firstslice\mpbox@first
+        \mpbox@firstslicewithroundcorner\mpbox@first
+        \hfil
+        \loop
+          \mpbox@split\mpbox@first\mpbox@rest\mpbox@gap
+          \leavevmode
+          \ifvoid\mpbox@rest      %% is this the last slice?
+            \mpbox@havemorefalse
+%            \mpbox@lastslice\mpbox@first
+            \mpbox@lastslicewithroundcorner\mpbox@first
+          \else                   %% not yet reached to the end
+%            \mpbox@midslice\mpbox@first
+            \mpbox@midslicewithroundedcorner\mpbox@first
+          \fi
+          \hfil
+        \ifmpbox@havemore\repeat}%
+    \fi
+    %% end of loop to construct slices
+    \leavevmode
+    \mpbox@allslices              %% put all slices
+    \par
+  }%
+  \ifmpbox@inside
+    \mpbox@insidefalse
+    \addvspace{\mpboxmarginbottom}%
+    \mpbox@insidetrue
+  \else
+    \addvspace{\mpboxmarginbottom}%
+  \fi
+}

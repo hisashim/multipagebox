@@ -1,0 +1,74 @@
+%% example document to demonstrate multipage.sty
+\documentclass[a5paper]{jsbook}
+\usepackage{jsclasses-patch}
+\usepackage[dvipdfm]{multipagebox}
+% \usepackage{type1cm,type1ec,fix-cm} % Arbitrary size font selection.
+% \usepackage[T1]{fontenc} % set encoding to T1 (avoid old OT1)
+% \usepackage[dvipdfm]{graphicx}
+\setcounter{errorcontextlines}{999}
+\AtBeginDocument{\special{papersize=\the\paperwidth,\the\paperheight}}
+
+\begin{document}
+
+\begin{multipagebox}
+Lorem ipsum dolor sit amet.
+\end{multipagebox}
+
+\begin{multipagebox}
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+\end{multipagebox}
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquip ex ea commodo consequat. Duis aute irure dolor in
+reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+culpa qui officia deserunt mollit anim id est laborum.
+
+\begin{multipagebox}
+\section{Lorem Ipsum}
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquip ex ea commodo consequat.
+
+\renewcommand{\mpboxbgcolor}{gray30}%
+\begin{multipagebox}
+\subsection{Dolor Sit Amet}
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquip ex ea commodo consequat. 
+
+\renewcommand{\mpboxbgcolor}{gray10}%
+\begin{multipagebox}
+\subsubsection{Consectetur}
+\paragraph{Adipisicing}
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua.
+\end{multipagebox}
+\end{multipagebox}
+
+\begin{itemize}
+\item Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+  eiusmod tempor incididunt ut labore et dolore magna aliqua.
+\item Ut enim ad minim veniam, quis nostrud exercitation ullamco
+  laboris nisi ut aliquip ex ea commodo consequat.
+\end{itemize}
+
+\begin{description}
+\item [Lorem ipsum] dolor sit amet, consectetur adipisicing elit, sed do
+  eiusmod tempor incididunt ut labore et dolore magna aliqua.
+\item [Ut] enim ad minim veniam, quis nostrud exercitation ullamco
+  laboris nisi ut aliquip ex ea commodo consequat.
+\end{description}
+
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquip ex ea commodo consequat.
+\end{multipagebox}
+
+\end{document}
