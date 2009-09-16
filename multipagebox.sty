@@ -86,6 +86,7 @@
 \newlength\mpbox@tempdim
 \newlength\mpbox@hborderlength
 \newlength\mpbox@vborderlength
+\newtoks\mpbox@fn        %% temporary storage for footnote text
 
 %%
 %% common utilities
@@ -113,6 +114,12 @@
   \mpbox@tempdim\dp#1
   \advance\mpbox@tempdim#2
   \dp#1\mpbox@tempdim}
+
+% save footnote text in a token register \mpbox@fn, to be used later at
+% the end of multipagebox environment
+\def\mpbox@footnotetext#1{%
+  \edef\@tempa{\the\mpbox@fn\noexpand\footnotetext[\the\c@footnote]}%
+  \global\mpbox@fn\expandafter{\@tempa{#1}}}%
 
 %%
 %% draw slices: square corner version (drawn with rules)
@@ -524,6 +531,7 @@
     \addvspace{\mpboxmargintop}%
   \fi
   \setbox\mpbox@rest\vbox\bgroup  %% start of content (vbox \mpbox@rest)
+    \let\@footnotetext\mpbox@footnotetext  %% shadow \@footnotetext
     \advance\linewidth -2\mpboxborderwidth
     \advance\linewidth -\mpboxpaddingleft
     \advance\linewidth -\mpboxpaddingright
@@ -587,11 +595,16 @@
     \ifvoid\mpbox@rest            %% there is only one slice
       \def\mpbox@allslices{%
 %        \mpbox@singleslice\mpbox@first}%
-        \mpbox@singleslicewithroundcorner\mpbox@first}%
+        \mpbox@singleslicewithroundcorner\mpbox@first
+        \the\mpbox@fn             %% put footnote
+        \global\mpbox@fn{}        %% empty \mpbox@fn
+      }%
     \else                         %% multiple slices
       \def\mpbox@allslices{%
 %        \mpbox@firstslice\mpbox@first
         \mpbox@firstslicewithroundcorner\mpbox@first
+        \the\mpbox@fn             %% put footnote
+        \global\mpbox@fn{}        %% empty \mpbox@fn
         \hfil
         \loop
           \mpbox@split\mpbox@first\mpbox@rest\mpbox@gap
@@ -603,6 +616,8 @@
           \else                   %% not yet reached to the end
 %            \mpbox@midslice\mpbox@first
             \mpbox@midslicewithroundedcorner\mpbox@first
+            \the\mpbox@fn         %% put footnote
+            \global\mpbox@fn{}    %% empty \mpbox@fn
           \fi
           \hfil
         \ifmpbox@havemore\repeat}%
