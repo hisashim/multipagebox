@@ -169,6 +169,12 @@
 %% draw slices: round corner version (drawn with picture)
 %%
 
+\def\mpbox@paint@corner{%
+  \color{\mpboxbgcolor}{\circle*{2}}}
+
+\def\mpbox@paint@strip{%
+  \color{\mpboxbgcolor}{\line(0,-1){1}}}
+
 \def\mpbox@singleslicewithroundcorner#1{%
   \vbox{%
     \setlength{\mpbox@hborderlength}{\hsize}%
@@ -185,7 +191,7 @@
       \setlength{\unitlength}{\ht\mpbox@contentbox}%
       \put(0,1){%                     %% move from baseline to nw corner
         \setlength{\unitlength}{\mpboxcornerradius}%
-        \put(1,-1){\color{\mpboxbgcolor}{\circle*{2}}}%  paint nw corner
+        \put(1,-1){\mpbox@paint@corner}%  paint nw corner
 %        \qbezier(0,-1)(0,0)(1,0)%     %% draw nw corner
         \put(1,0){%
           \setlength{\unitlength}{0.5\mpbox@hborderlength}%
@@ -193,7 +199,7 @@
             \setlength{\unitlength}{\ht\mpbox@contentbox}%
             \addtolength{\unitlength}{\dp\mpbox@contentbox}%
             \linethickness{\mpbox@hborderlength}%
-            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            \mpbox@paint@strip
           }%
           \put(1,0){%
             \setlength{\unitlength}{\mpboxcornerradius}%
@@ -202,28 +208,28 @@
               \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
               \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
               \linethickness{\mpbox@tempdim}%
-              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+              \mpbox@paint@strip
             }%
           }%
           \setlength{\unitlength}{\mpbox@hborderlength}%
           \line(1,0){1}%              %% draw n border (BUG?: ne/se corner not painted without this line)
           \put(0,0){%
             \setlength{\unitlength}{\mpboxcornerradius}%
-            \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint ne corner
+            \put(0,-1){\mpbox@paint@corner}% %% paint ne corner
 %            \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
             \put(1,-1){%
               \setlength{\unitlength}{\mpbox@vborderlength}%
 %              \line(0,-1){1}%         %% draw e border
               \put(0,-1){%
                 \setlength{\unitlength}{\mpboxcornerradius}%
-                \put(-1,0){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint se corner
+                \put(-1,0){\mpbox@paint@corner}% %% paint se corner
 %                \qbezier(0,0)(0,-1)(-1,-1)% %% draw se corner
                 \put(-1,-1){%
                   \setlength{\unitlength}{\mpbox@hborderlength}%
 %                  \line(-1,0){1}%     %% draw s border
                   \put(-1,0){%
                     \setlength{\unitlength}{\mpboxcornerradius}%
-                    \put(0,1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint nw corner
+                    \put(0,1){\mpbox@paint@corner}% %% paint nw corner
 %                    \qbezier(0,0)(-1,0)(-1,1)% %% draw sw corner
 %                    \put(-1,1){%
 %                      \setlength{\unitlength}{\mpbox@vborderlength}%
@@ -313,7 +319,7 @@
               \setlength{\unitlength}{\ht\mpbox@contentbox}%
               \addtolength{\unitlength}{\dp\mpbox@contentbox}%
               \linethickness{\mpbox@hborderlength}%
-              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+              \mpbox@paint@strip%
             }%
             \put(1,0){%
               \setlength{\unitlength}{\mpboxcornerradius}%
@@ -322,16 +328,16 @@
                 \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
                 \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
                 \linethickness{\mpbox@tempdim}%
-                \color{\mpboxbgcolor}{\line(0,-1){1}}%
+                \mpbox@paint@strip%
               }%
             }%
             \setlength{\unitlength}{\mpboxcornerradius}%
-            \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint nw corner
+            \put(0,-1){\mpbox@paint@corner}% %% paint nw corner
             \setlength{\unitlength}{\mpbox@hborderlength}%
             \line(1,0){1}%            %% n border (BUG?: ne corner not painted without this line)
             \put(0,0){%
               \setlength{\unitlength}{\mpboxcornerradius}%
-              \put(0,-1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint ne corner
+              \put(0,-1){\mpbox@paint@corner}% %% paint ne corner
 %              \qbezier(0,0)(1,0)(1,-1)% %% draw ne corner
 %              \put(1,-1){%
 %                \setlength{\unitlength}{\mpbox@vborderlength}%
@@ -396,7 +402,7 @@
             \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
             \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
             \linethickness{\mpbox@tempdim}%
-            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            \mpbox@paint@strip%
           }%
         }%
 %        \setlength{\unitlength}{\mpbox@vborderlength}%
@@ -452,7 +458,7 @@
             \setlength{\unitlength}{\ht\mpbox@contentbox}%
             \addtolength{\unitlength}{\dp\mpbox@contentbox}%
             \linethickness{\mpbox@hborderlength}%
-            \color{\mpboxbgcolor}{\line(0,-1){1}}%
+            \mpbox@paint@strip%
           }%
           \put(1,0){%
             \setlength{\unitlength}{\mpboxcornerradius}%
@@ -461,7 +467,7 @@
               \setlength{\mpbox@tempdim}{\mpbox@hborderlength}%
               \addtolength{\mpbox@tempdim}{2\mpboxcornerradius}%
               \linethickness{\mpbox@tempdim}%
-              \color{\mpboxbgcolor}{\line(0,-1){1}}%
+              \mpbox@paint@strip%
             }%
           }%
         }%
@@ -469,14 +475,14 @@
 %        \line(0,-1){1}%              %% draw w border
         \put(0,-1){%
           \setlength{\unitlength}{\mpboxcornerradius}%
-          \put(1,0){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint sw corner
+          \put(1,0){\mpbox@paint@corner}% %% paint sw corner
 %          \qbezier(0,0)(0,-1)(1,-1)%  %% draw sw corner
           \put(1,-1){%
             \setlength{\unitlength}{\mpbox@hborderlength}%
             \line(1,0){1}%            %% draw s border (BUG?: se corner not painted without this line)
             \put(0,0){%
               \setlength{\unitlength}{\mpboxcornerradius}%
-              \put(0,1){\color{\mpboxbgcolor}{\circle*{2}}}% %% paint se corner
+              \put(0,1){\mpbox@paint@corner}% %% paint se corner
 %              \qbezier(0,0)(1,0)(1,1)% %% draw se corner
               \put(1,1){%
                 \setlength{\unitlength}{\mpbox@vborderlength}%
