@@ -1,6 +1,18 @@
 %% multipagebox.sty
 %% Multi-page Spanning Box with Round Corners
-%% 2008 Hisashi Morita
+%% 2008-2010 Hisashi Morita
+%%
+%% Usage:
+%%   \usepackage{multipagebox}% in preamble
+%%   ...
+%%   \begin{multipagebox}
+%%   ...
+%%   \end{multipagebox}
+%%
+%% Known problems:
+%%   * Footnotes inside may not be printed.
+%%   * Conflicts with \null\vspace* in \@startsection.
+%%     Possible workaround: Replace them with \addvspace.
 %%
 %% How it works:
 %%
@@ -18,8 +30,9 @@
 %%   slice = picture + content (i.e. |foo| = |   | + foo)
 %%
 %% References:
-%%   Hideki Isozaki, "LaTeX Jiyu Jizai" (Sciencesha, 1992)
-%%   Tetsumi Yoshinaga, "LaTeX2e Macro & Class Programming Jissen Kaisetsu" (Gijutsu Hyoronsha, 2003)
+%%   * Hideki Isozaki, "LaTeX Jiyu Jizai" (Saiensusha, 1992)
+%%   * Tetsumi Yoshinaga, "LaTeX2e Macro & Class Programming Jissen Kaisetsu"
+%%     (Gijutsu Hyoronsha, 2003)
 
 %%
 %% package declarations
