@@ -1,7 +1,10 @@
-%% example document to demonstrate multipage.sty
-\documentclass[a5paper]{jsbook}
-\usepackage{jsclasses-patch}
-\usepackage[dvipdfm]{multipagebox}
+%% Usage example for multipagebox.sty
+\documentclass{article}
+% Note: Older version of TeX Live (<=2007) may report an error like:
+%   ! LaTeX Error: File `dvipdfmx.def' not found.
+% Then try using dvipdfm option instead:
+%   \usepackage[dvipdfm]{multipagebox}
+\usepackage[dvipdfmx]{multipagebox}
 
 \begin{document}
 
