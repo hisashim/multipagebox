@@ -1,0 +1,12 @@
+Source: multipagebox
+Section: tex
+Priority: extra
+Maintainer: Hisashi Morita <hisashim@workbook.org>
+Build-Depends: cdbs, debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+
+Package: multipagebox
+Architecture: all
+Depends: ${misc:Depends}, texlive-latex-base, texlive-pictures
+Description: LaTeX macro for multi-page spanning framed box
+ Might be useful for typesetting sidebars.
