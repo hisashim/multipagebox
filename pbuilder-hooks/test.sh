@@ -46,7 +46,7 @@ cp -v /var/cache/pbuilder/result/${DEB}.diff.gz ./
 echo "### Extracting source package..."
 tar xfz ${PACKAGE}_${VERSION}.orig.tar.gz
 echo "### Processing test documents..."
-cd ${PACKAGE}_${VERSION}.orig
+cd multipagebox-${VERSION}
 rm -fv multipagebox.sty
 echo -n "kpsewhich multipagebox.sty: "; kpsewhich multipagebox.sty
 make test

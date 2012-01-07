@@ -104,6 +104,7 @@ pbuilder-login:
 pbuilder-test: $(DEB)_all.deb
 	sudo $(PBUILDER) --execute $(PBOPTS) -- pbuilder-hooks/test.sh \
 	$(PACKAGE) $(VERSION) $(DEBREV)
+	cp /var/cache/pbuilder/result/$(DEB)-test.tar.gz ./
 
 $(DEB).dsc: debuild
 
@@ -111,7 +112,7 @@ debuild: $(RELEASE) $(DEBORIG).tar.gz
 	($(TAR_XVCS) -cf - debian) | (cd $(RELEASE) && tar xpf -)
 	(cd $(RELEASE) && debuild $(DEBUILDOPTS); cd -)
 
-$(DEBORIG): $(RELEASE)
+$(DEBORIG).tar.gz: $(RELEASE).tar.gz
 	cp -a $< $@
 
 debuild-clean:
@@ -123,7 +124,7 @@ debuild-clean:
 # utilities
 
 mostlyclean:
-	rm -f $(TESTDOC:.tex=).log
+	rm -f $(foreach s,log aux dvi pdf,$(TESTDOC:.tex=.$(s)))
 	rm -fr $(RELEASE)
 
 clean: mostlyclean
