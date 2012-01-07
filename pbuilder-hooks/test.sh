@@ -51,7 +51,7 @@ rm -fv multipagebox.sty
 echo -n "kpsewhich multipagebox.sty: "; kpsewhich multipagebox.sty
 make test
 echo "### Copying test result to /var/cache/pbuilder/result..."
-tar cfz ${DEB}-test.tar.gz *.pdf
+tar cfz ${DEB}-test.tar.gz multipagebox.*
 cp -v ${DEB}-test.tar.gz /var/cache/pbuilder/result
 cd -
 echo "### Testing uninstallation..."
