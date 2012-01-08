@@ -120,6 +120,7 @@ debuild-clean:
 	rm -f $(DEB)_*.build $(DEB)_*.changes *.cdbs-config_list
 	rm -fr debian/$(PACKAGE)
 	rm -f $(DEB).dsc $(DEBORIG).tar.gz $(DEB).diff.gz $(DEB)_*.deb
+	rm -f $(DEB)-test.tar.gz
 
 # utilities
 
