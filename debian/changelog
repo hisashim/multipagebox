@@ -1,3 +1,9 @@
+multipagebox (0.0.2-0+0hisashim1) unstable; urgency=low
+
+  * New upstream version
+
+ -- Hisashi Morita <hisashim@workbook.org>  Mon, 09 Jan 2012 02:38:14 +0900
+
 multipagebox (0.0.1-0+0hisashim1) unstable; urgency=low
 
   * Initial release
