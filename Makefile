@@ -54,10 +54,10 @@ all: $(DIST)
 install: ChangeLog
 	mkdir -p $(DESTDIR)$(TEXMF_TL)/tex/latex/$(PRODUCT)
 	cp -r *.sty $(DESTDIR)$(TEXMF_TL)/tex/latex/$(PRODUCT)
-	mkdir -p $(DESTDIR)$(TEXMF)/tex/latex/$(PRODUCT)
-	(cd $(DESTDIR)$(TEXMF) && \
-	ln -s $(TEXMF_TL)/tex/latex/$(PRODUCT) tex/latex/$(PRODUCT); \
-	cd -)
+	if [ -d $(DESTDIR)$(TEXMF) ]; then \
+	  mkdir -p $(DESTDIR)$(TEXMF)/tex/latex/$(PRODUCT); \
+	  cp -r *.sty $(DESTDIR)$(TEXMF)/tex/latex/$(PRODUCT); \
+	fi
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PRODUCT)
 	cp -r ChangeLog $(DESTDIR)/usr/share/doc/$(PRODUCT)
 
