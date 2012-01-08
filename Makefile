@@ -61,6 +61,11 @@ install: ChangeLog
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PRODUCT)
 	cp -r ChangeLog $(DESTDIR)/usr/share/doc/$(PRODUCT)
 
+uninstall:
+	rm -fr $(DESTDIR)$(TEXMF_TL)/tex/latex/$(PRODUCT)
+	rm -fr $(DESTDIR)$(TEXMF)/tex/latex/$(PRODUCT)
+	rm -fr $(DESTDIR)/usr/share/doc/$(PRODUCT)
+
 # testing
 
 test: $(TESTDOC:.tex=.pdf)
