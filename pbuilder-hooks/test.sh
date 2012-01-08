@@ -48,7 +48,12 @@ tar xfz ${PACKAGE}_${VERSION}.orig.tar.gz
 echo "### Processing test documents..."
 cd multipagebox-${VERSION}
 rm -fv multipagebox.sty
-echo -n "kpsewhich multipagebox.sty: "; kpsewhich multipagebox.sty
+echo "### kpsewhich multipagebox.sty"
+kpsewhich multipagebox.sty
+echo "### TEXINPUTS=/usr/share/texmf:\$TEXINPUTS kpsewhich multipagebox.sty"
+TEXINPUTS=/usr/share/texmf//:$TEXINPUTS kpsewhich multipagebox.sty
+echo "### TEXINPUTS=/usr/share/texmf-texlive//:\$TEXINPUTS kpsewhich multipagebox.sty"
+TEXINPUTS=/usr/share/texmf-texlive//:$TEXINPUTS kpsewhich multipagebox.sty
 make test
 echo "### Copying test result to /var/cache/pbuilder/result..."
 tar cfz ${DEB}-test.tar.gz multipagebox.*
